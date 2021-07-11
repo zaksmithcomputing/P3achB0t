@@ -1,9 +1,9 @@
 package com.p3achb0t.api.wrappers.utils
 
-import com.p3achb0t._runestar_interfaces.Actor
-import com.p3achb0t._runestar_interfaces.Model
-import com.p3achb0t._runestar_interfaces.Npc
-import com.p3achb0t._runestar_interfaces.Player
+import com.p3achb0t.api.interfaces.Actor
+import com.p3achb0t.api.interfaces.Model
+import com.p3achb0t.api.interfaces.Npc
+import com.p3achb0t.api.interfaces.Player
 import com.p3achb0t.api.Context
 import java.awt.Point
 import java.awt.Polygon
@@ -103,16 +103,16 @@ fun getTrianglesFromModel(
                             0 - yPoints[indiciesZ[i]] - locZ + localTileHeight, ctx
                     )
                     if (one.x >= 0 && two.x >= 0 && three.x >= 0
-                        && Calculations.isOnscreen(ctx,one) && Calculations.isOnscreen(ctx,two ) && Calculations.isOnscreen(ctx,
+                            && Calculations.isOnscreen(ctx,one) && Calculations.isOnscreen(ctx,two ) && Calculations.isOnscreen(ctx,
                                     three
                             )
                     ) {
                         polygonList.add(
-                            Polygon(
-                                intArrayOf(one.x, two.x, three.x),
-                                intArrayOf(one.y, two.y, three.y),
-                                3
-                            )
+                                Polygon(
+                                        intArrayOf(one.x, two.x, three.x),
+                                        intArrayOf(one.y, two.y, three.y),
+                                        3
+                                )
                         )
                     }
                 }

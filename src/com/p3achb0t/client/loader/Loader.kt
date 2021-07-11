@@ -26,6 +26,10 @@ class Loader {
 
         } else {
             // clean -> Download TODO clean
+            print("Cleaning up old gamepacks")
+            val gamePacksDir = "${Constants.USER_DIR}/${Constants.APPLICATION_CACHE_DIR}/${Constants.JARS_DIR}"
+            File(gamePacksDir).deleteRecursively()
+            File(gamePacksDir).mkdir()
             download()
             return isLocalGamepack()
         }
@@ -36,6 +40,10 @@ class Loader {
         println("Gamepack not found locally...downloading pack")
         val gamepackURL = URL(Constants.GAME_WORLD_URL + "/" + gamepackName)
         val readableByteChannel = Channels.newChannel(gamepackURL.openStream())
+        val directory = File(Constants.USER_DIR + "/" + Constants.APPLICATION_CACHE_DIR + "/" + Constants.JARS_DIR)
+        if(!directory.exists()){
+            directory.mkdirs()
+        }
         val fileOutStream = FileOutputStream(Paths.get(Constants.USER_DIR, Constants.APPLICATION_CACHE_DIR, Constants.JARS_DIR, gamepackName).toString())
         val fileChannel = fileOutStream.channel
         fileChannel.transferFrom(readableByteChannel, 0, Long.MAX_VALUE)
@@ -70,8 +78,8 @@ class Loader {
         for (line in res.split("\n")) {
             if (line.contains("archive=")) {
                 val strReplace = "g.*.jar"
-                val gamePack = getRegSelection(strReplace, line)
-                println("Current game pack: " + gamePack)
+                val gamePack = getRegSelection(strReplace, line).replace(".jar", "__v${Constants.REVISION_WITH_SUBVERSION }.jar")
+                println("Current game pack: $gamePack")
                 return gamePack
             }
         }

@@ -11,8 +11,9 @@ import java.net.URISyntaxException
 import java.net.URL
 import java.util.*
 import javax.imageio.ImageIO
+import kotlin.jvm.Throws
 
-public class RSAppletContext : AppletContext {
+class RSAppletContext : AppletContext {
 
     private val streams = HashMap<String, InputStream>()
     private var applet: Applet? = null

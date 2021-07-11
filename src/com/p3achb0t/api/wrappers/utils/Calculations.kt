@@ -46,7 +46,7 @@ class Calculations {
             }
         }
 
-        fun getTileHeight(ctx: Context, tile: Tile): Int{
+        fun getTileHeight(ctx: Context, tile: Tile): Int {
             return getTileHeight(ctx, tile.plane, tile.x, tile.y)
         }
 
@@ -79,14 +79,14 @@ class Calculations {
          */
         fun worldToScreen(regionX: Int, regionY: Int, modelHeight: Int, ctx: Context): Point {
             var x = regionX
-            var y = regionY
-            if (x < 128 || y < 128 || x > 13056 || y > 13056) {
+            var z = regionY
+            if (x < 128 || z < 128 || x > 13056 || z > 13056) {
                 return Point(-1, -1)
             }
-            var z = getTileHeight(ctx, ctx.client.getPlane(), x, y) - modelHeight
+            var y = getTileHeight(ctx, ctx.client.getPlane(), x, z) - modelHeight
             x -= ctx.client.getCameraX()
-            z -= ctx.client.getCameraZ()
             y -= ctx.client.getCameraY()
+            z -= ctx.client.getCameraZ()
 
             val yaw = ctx.client.getCameraYaw()
             val pitch = ctx.client.getCameraPitch()
@@ -96,20 +96,20 @@ class Calculations {
             val sinCurveX = SINE[yaw]
             val cosCurveX = COSINE[yaw]
 
-            var _angle = (y * sinCurveX + x * cosCurveX) shr 16
+            var _angle = (z * sinCurveX + x * cosCurveX) shr 16
 
-            y = ((y * cosCurveX) - (x * sinCurveX)) shr 16
+            z = ((z * cosCurveX) - (x * sinCurveX)) shr 16
             x = _angle
 
-            _angle = (z * cosCurveY - y * sinCurveY) shr 16
-            y = (z * sinCurveY + y * cosCurveY) shr 16
-            z = _angle
+            _angle = (y * cosCurveY - z * sinCurveY) shr 16
+            z = (y * sinCurveY + z * cosCurveY) shr 16
+            y = _angle
 
 
-            return if (y >= 50) {
+            return if (z >= 50) {
 
-                val screenX = x * ctx.client.getViewportZoom() / y + ctx.applet.size.width / 2
-                val screenY = z * ctx.client.getViewportZoom() / y + ctx.applet.size.height / 2
+                val screenX = x * ctx.client.getViewportZoom() / z + ctx.applet.size.width / 2
+                val screenY = y * ctx.client.getViewportZoom() / z + ctx.applet.size.height / 2
                 Point(screenX, screenY)
             } else Point(-1, -1)
         }
@@ -119,7 +119,6 @@ class Calculations {
         }
 
         fun initScreenWidgetDimentions(ctx: Context) {
-            println("Init screenDimentions")
             // main screen 122,0
             //Mini map 164, 17
             val miniMapWidget = WidgetItem(
@@ -133,28 +132,27 @@ class Calculations {
 
 
             //inventory bar 164,48(topbar), bottom 164,33
-            val inventoryTop = WidgetItem(ctx.widgets.find(WidgetID.RESIZABLE_VIEWPORT_BOTTOM_LINE_GROUP_ID, 48), ctx = ctx)
+            val inventoryTop = WidgetItem(ctx.widgets.find(WidgetID.RESIZABLE_VIEWPORT_BOTTOM_LINE_GROUP_ID, 49), ctx = ctx)
             inventoryBarTopDimensions = inventoryTop.area
-            val inventoryBottom = WidgetItem(ctx.widgets.find(WidgetID.RESIZABLE_VIEWPORT_BOTTOM_LINE_GROUP_ID, 33), ctx = ctx)
+            val inventoryBottom = WidgetItem(ctx.widgets.find(WidgetID.RESIZABLE_VIEWPORT_BOTTOM_LINE_GROUP_ID, 34), ctx = ctx)
             inventoryBarBottomDimensions = inventoryBottom.area
             //chatbox 162,0
             val chatbox = WidgetItem(ctx.widgets.find(WidgetID.CHATBOX_GROUP_ID, 0), ctx = ctx)
             chatBoxDimensions = chatbox.area
-            val tabWidget = WidgetItem(ctx.widgets.find(WidgetID.RESIZABLE_VIEWPORT_BOTTOM_LINE_GROUP_ID, 65), ctx = ctx)
+            val tabWidget = WidgetItem(ctx.widgets.find(WidgetID.RESIZABLE_VIEWPORT_BOTTOM_LINE_GROUP_ID, 66), ctx = ctx)
             inventoryDimensions = tabWidget.area
 
             mainScreen = WidgetItem(ctx.widgets.find(WidgetID.RESIZABLE_VIEWPORT_BOTTOM_LINE_GROUP_ID, 0), ctx = ctx).area
             // Only set to true if login screen is not visible
             val login = WidgetItem(ctx.widgets.find(WidgetID.LOGIN_CLICK_TO_PLAY_GROUP_ID, 85), ctx = ctx)
-            println("login x,y: ${login.area.x}, ${login.area.y}  inventoryDimensions: ${chatBoxDimensions.x},${chatBoxDimensions.y}")
             if (login.area.x == 0
-                && login.area.y == 0
-                && login.area.height == 0
-                && login.area.width == 0
-                && miniMapWidget.area.x > 500
-                && chatBoxDimensions.y > 50
-                && inventoryBarBottomDimensions.y > 10
-                && inventoryBarTopDimensions.y > 50
+                    && login.area.y == 0
+                    && login.area.height == 0
+                    && login.area.width == 0
+                    && miniMapWidget.area.x > 500
+                    && chatBoxDimensions.y > 50
+                    && inventoryBarBottomDimensions.y > 10
+                    && inventoryBarTopDimensions.y > 50
             ) {
                 screenInit = true
                 resizeableOffScreenAreas.add(chatBoxDimensions)
@@ -208,7 +206,7 @@ class Calculations {
 
 
         // This will convert the regional coordinates to the miniMap
-        fun worldToMiniMap(x: Int, y: Int, ctx: Context): Point {
+        fun worldToMiniMap(x: Int, y: Int, ctx: Context, checkInMapArea: Boolean = true): Point {
 
             // Note: Multiply by tile size before converting to local coordinates to preserve precision
             val tilePX = ((x - ctx.client.getBaseX()) * Constants.MAP_TILE_SIZE) shr Constants.REGION_SHIFT
@@ -216,9 +214,9 @@ class Calculations {
             val local = ctx.client.getLocalPlayer()
 
             val playerPX =
-                ((local.getX() - ctx.client.getBaseX()) * Constants.MAP_TILE_SIZE) shr Constants.REGION_SHIFT
+                    ((local.getX() - ctx.client.getBaseX()) * Constants.MAP_TILE_SIZE) shr Constants.REGION_SHIFT
             val playerPY =
-                ((local.getY() - ctx.client.getBaseY()) * Constants.MAP_TILE_SIZE) shr Constants.REGION_SHIFT
+                    ((local.getY() - ctx.client.getBaseY()) * Constants.MAP_TILE_SIZE) shr Constants.REGION_SHIFT
 
 
             val diffX = tilePX - playerPX
@@ -236,7 +234,7 @@ class Calculations {
 
             val screenX = calcCenterX + Widget.getWidgetX(miniMapWidget, ctx) + miniMapWidget.getWidth() / 2
             val screenY = calcCenterY + Widget.getWidgetY(miniMapWidget, ctx) + miniMapWidget.getHeight() / 2
-            return if (ctx.miniMap.getMapArea().contains(Point(screenX, screenY))) {
+            return if (ctx.miniMap.getMapArea().contains(Point(screenX, screenY)) || checkInMapArea) {
                 Point(screenX - 2, screenY - 1)
             } else Point(-1, -1)
         }
@@ -250,9 +248,9 @@ class Calculations {
                 val x = localX.and(LOCAL_TILE_SIZE)
                 val y = localY.and(LOCAL_TILE_SIZE)
                 val var8 =
-                    (x * tileHeights[plane][sceneX + 1][sceneY] + (LOCAL_TILE_SIZE - x) * tileHeights[plane][sceneX][sceneY]) shr LOCAL_COORD_BITS
+                        (x * tileHeights[plane][sceneX + 1][sceneY] + (LOCAL_TILE_SIZE - x) * tileHeights[plane][sceneX][sceneY]) shr LOCAL_COORD_BITS
                 val var9 =
-                    (tileHeights[plane][sceneX][sceneY + 1] * (LOCAL_TILE_SIZE - x) + x * tileHeights[plane][sceneX + 1][sceneY + 1]) shr LOCAL_COORD_BITS
+                        (tileHeights[plane][sceneX][sceneY + 1] * (LOCAL_TILE_SIZE - x) + x * tileHeights[plane][sceneX + 1][sceneY + 1]) shr LOCAL_COORD_BITS
                 return ((LOCAL_TILE_SIZE - y) * var8 + y * var9) shr LOCAL_COORD_BITS + 168
             }
 
@@ -308,10 +306,10 @@ class Calculations {
             }
 
             val poly = Polygon()
-            poly.addPoint(p1.x,p1.y)
-            poly.addPoint(p2.x,p2.y)
-            poly.addPoint(p3.x,p3.y)
-            poly.addPoint(p4.x,p4.y)
+            poly.addPoint(p1.x, p1.y)
+            poly.addPoint(p2.x, p2.y)
+            poly.addPoint(p3.x, p3.y)
+            poly.addPoint(p4.x, p4.y)
 
             //Covert polygon to an Area and each rectangle to an Area. With the area class you can use subtract
             // as an easy way to computer the masked section.

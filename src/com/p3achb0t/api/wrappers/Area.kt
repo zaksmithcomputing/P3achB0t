@@ -1,6 +1,5 @@
 package com.p3achb0t.api.wrappers
 
-import com.p3achb0t._runestar_interfaces.Tiles
 import com.p3achb0t.api.Context
 import com.p3achb0t.api.wrappers.interfaces.Locatable
 import java.awt.Point
@@ -51,10 +50,20 @@ class Area {
         computeAreaTiles()
     }
 
+    constructor(tiles: ArrayList<Tile> , ctx: Context?= null){
+        this.plane = tiles[0].z
+        this.ctx = ctx
+        tiles.forEach {
+            this.inputTiles.add(Tile(it.x,it.y,it.z,ctx))
+        }
+        computeAreaTiles()
+    }
+
+
     private fun computeAreaTiles() {
         //Create a polygon from the tiles
         for (tile in inputTiles) {
-            polygon.addPoint(tile.x + 1, tile.y + 1)
+            polygon.addPoint(tile.x , tile.y)
         }
         //Convert the polygon to all tiles that would be associated with this area
         val r = polygon.bounds
@@ -65,7 +74,7 @@ class Area {
                 val _x = r.x + x
                 val _y = r.y + y
                 if (polygon.contains(_x, _y)) {
-                    lTiles[c++] = Tile(_x, _y, plane, ctx = ctx)
+                    lTiles[c++] = Tile(_x , _y, plane, ctx = ctx)
                 }
             }
         }
@@ -152,11 +161,15 @@ class Area {
         }
     }
 
-    fun isPlayerInArea(): Boolean{
-        if(ctx == null){
+    fun isPlayerInArea(ignorePlane: Boolean = false): Boolean {
+        if (ctx == null) {
             println("ERROR: ctx is null, distance to player cant be computed. Please provide the ctx")
+            Thread.currentThread().stackTrace.forEach {
+                println(it.toString())
+            }
         }
-        return ctx?.players?.getLocal()?.getGlobalLocation()?.let { this.containsOrIntersects(it) } ?: false
+        return ctx?.players?.getLocal()?.getGlobalLocation()?.let { this.containsOrIntersects(it, ignorePlane = ignorePlane) }
+                ?: false
     }
 
     fun contains(vararg locatables: Locatable): Boolean {
@@ -169,12 +182,13 @@ class Area {
         return true
     }
 
-    fun containsOrIntersects(vararg locatables: Locatable): Boolean {
+    fun containsOrIntersects(vararg locatables: Locatable, ignorePlane: Boolean = false): Boolean {
         for (locatable in locatables) {
             val tile = locatable.getGlobalLocation()
-            if (tile.z != plane || !polygon.contains(tile.x, tile.y) && !polygon.intersects(
-                            tile.x + 0.5,
-                            tile.y + 0.5,
+            val planeCheck = ignorePlane || tile.z != plane
+            if (planeCheck || !polygon.contains(tile.x, tile.y) && !polygon.intersects(
+                            tile.x.toDouble() ,
+                            tile.y.toDouble(),
                             1.0,
                             1.0
                     )

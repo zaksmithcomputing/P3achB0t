@@ -1,9 +1,9 @@
 package com.p3achb0t.api.wrappers
 
-import com.p3achb0t._runestar_interfaces.Actor
-import com.p3achb0t._runestar_interfaces.Headbar
-import com.p3achb0t._runestar_interfaces.HeadbarUpdate
 import com.p3achb0t.api.Context
+import com.p3achb0t.api.interfaces.Actor
+import com.p3achb0t.api.interfaces.Headbar
+import com.p3achb0t.api.interfaces.HeadbarUpdate
 import com.p3achb0t.api.wrappers.interfaces.Interactable
 import com.p3achb0t.api.wrappers.interfaces.Locatable
 import com.p3achb0t.api.wrappers.utils.Calculations
@@ -38,6 +38,10 @@ open class Actor(
         get() {
             return raw.getOverheadText()
         }
+    val orientation: Orientation?
+    get(){
+        return Orientation.fromInt(raw.getOrientation())
+    }
 
     override fun getInteractPoint(): Point {
         TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
@@ -60,24 +64,53 @@ open class Actor(
         return raw.getSequence() == -1 && raw.getTargetIndex() == -1
     }
 
-    suspend fun waitTillIdle(time: Int = 4) {
+    suspend fun waitTillIdle(time: Int = 8) {
+        //Add a small delay to allow for initial movement from the previous command
+        delay(Random.nextLong(650, 1000))
+        Utils.waitFor(time, object : Utils.Condition {
+            var lastX = raw.getX()
+            var lastY = raw.getY()
+            override suspend fun accept(): Boolean {
+                //Need to make sure we are idle for at least 200ms
+
+                if (ctx!!.players.getLocal().isIdle())
+                    delay(100)
+                delay(100)
+                var idle = false
+
+                idle = if (ctx != null && ctx?.client != null) {
+                    ctx!!.players.getLocal().isIdle()
+                        && lastX == raw.getX()
+                        && lastY == raw.getY()
+                } else return false
+                lastX = raw.getX()
+                lastY = raw.getY()
+                return idle
+            }
+        })
+    }
+
+    suspend fun waitTillSequenceIdle(time: Int = 4) {
         //Add a small delay to allow for initial movement from the previous command
         delay(Random.nextLong(650, 1000))
         Utils.waitFor(time, object : Utils.Condition {
             override suspend fun accept(): Boolean {
+                if(!ctx?.worldHop?.isLoggedIn!!){
+                    return true
+                }
                 //Need to make sure we are idle for at least 200ms
                 if (ctx!!.players.getLocal().isIdle())
                     delay(100)
                 delay(100)
-                return if (ctx != null && ctx?.client != null) ctx!!.players.getLocal().isIdle() else return false
+                return if (ctx != null && ctx?.client != null) ctx!!.players.getLocal().player.getSequence() == -1 else return false
             }
         })
     }
 
     /**
-     * Health percent between `0.0` and `1.0` of limited precision. `null` if the health-bar is not visible.
+     * Health percent between `0.0` and `1.0` of limited precision. `1` if the health-bar is not visible.
      */
-    val health: Double? get(){
+    val health: Double get(){
         val headBars = raw.getHeadbars()
         val headbar = headBars.getSentinel().getNext()
         if(headbar is Headbar){
@@ -87,7 +120,7 @@ open class Actor(
                 return update.getHealth().toDouble() / def.getWidth()
             }
         }
-        return null
+        return 1.0
     }
 
     override fun isOnScreen(): Boolean {

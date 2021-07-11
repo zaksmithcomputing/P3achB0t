@@ -1,7 +1,7 @@
 package com.p3achb0t.api.wrappers.widgets
 
-import com.p3achb0t._runestar_interfaces.Component
 import com.p3achb0t.api.Context
+import com.p3achb0t.api.interfaces.Component
 import com.p3achb0t.api.wrappers.utils.Utils
 import kotlinx.coroutines.delay
 
@@ -9,16 +9,27 @@ class Widgets(val ctx: Context) {
     fun find(parent: Int, child: Int): Component? {
         var widget: Component? = null
         try {
-            widget = ctx.client.getInterfaceComponents()[parent][child]
-
+            if(ctx != null) {
+                val components = ctx.client.getInterfaceComponents()
+                if(components!= null) {
+                    val parentW = components[parent]
+                    if (parentW != null) {
+                        val childW = parentW[child]
+                        if (childW != null) {
+                            widget = childW
+                        }
+                    }
+                }
+            }
         } catch (e: Exception) {
-            return null
+            e.printStackTrace()
+            return widget
         }
         return widget
     }
 
     suspend fun waitTillWidgetNotNull(parent: Int, child: Int) {
-        Utils.waitFor(2, object : Utils.Condition {
+        Utils.waitFor(5, object : Utils.Condition {
             override suspend fun accept(): Boolean {
                 delay(100)
                 return find(parent, child) != null
@@ -48,6 +59,35 @@ class Widgets(val ctx: Context) {
 
     }
 
+    fun find(text:String): ArrayList<Component>{
+        val components = ArrayList<Component>()
+
+        try {
+            ctx.client.getInterfaceComponents().withIndex().forEach {
+                if(it.value != null){
+                    it.value.withIndex().forEach {comp ->
+                        if(comp.value != null){
+                            val tempWidget = WidgetItem(comp.value, ctx = ctx)
+                            if (tempWidget.containsText(text)) {
+                                components.add(comp.value)
+                            }
+                        }
+
+                    }
+                }
+            }
+
+
+        } catch (e: Exception) {
+            e.stackTrace.iterator().forEach {
+                println(it.toString())
+            }
+
+        }
+        return components
+
+    }
+
     fun isWidgetAvaliable(parent: Int, child: Int): Boolean {
         return find(parent, child) != null
     }
@@ -56,7 +96,7 @@ class Widgets(val ctx: Context) {
         var result = "--$index--\n"
         try {
             val containerID = widget.getId().shr(16)
-            val childID = widget.getId().and(0xFF)
+            val childID = widget.getId().and(0xFFFF)
             result += "Widget ID:" + widget.getId() + "($containerID,$childID)\n"
             val parentIndex = Widget.getParentIndex(widget, ctx)
             result += "raw parent ID: ${widget.getParentId()}\n"
@@ -69,11 +109,14 @@ class Widgets(val ctx: Context) {
             result += "\n"
             result += "Type: ${widget.getType()}"
             result += "Text:" + widget.getText() + "\n"
+            result += "Text2:" + widget.getText2() + "\n"
             var actions = "["
             if (widget.getItemActions() != null) {
                 widget.getItemActions().iterator().forEach { actions += "$it," }
             }
             result += "Actions:$actions]\n"
+            result += "cycle:" + widget.getCycle() + "\n"
+            result += "model frame cycle:" + widget.getModelFrameCycle() + "\n"
             result += "Sprite ID:" + widget.getSpriteId() + "\n"
             result += "Sprite2 ID:" + widget.getSpriteId2() + "\n"
             result += "Item ID:" + widget.getItemId() + "\n"
@@ -136,8 +179,10 @@ class Widgets(val ctx: Context) {
             var i = 0
             if(widget.getChildren() != null && widget.getChildren().isNotEmpty()) {
                 widget.getChildren().iterator().forEach {
-                    result += getWidgetDetails(it, i)
-                    i += 1
+                    if(it != null) {
+                        result += getWidgetDetails(it, i)
+                        i += 1
+                    }
                 }
             }
 //                if (widget.getChildren().isNotEmpty()) {
@@ -151,5 +196,10 @@ class Widgets(val ctx: Context) {
             return result
         }
         return result
+    }
+
+    fun isWelcomeScreenButtonAvailable(): Boolean{
+        return ctx.widgets.isWidgetAvaliable(378, 78) &&
+            (ctx.widgets.find(378,78)?.getIsHidden() == true)
     }
 }

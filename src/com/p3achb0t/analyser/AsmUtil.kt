@@ -57,9 +57,20 @@ class AsmUtil {
             val insn = node.instructions
             insn.add(VarInsnNode(Opcodes.ALOAD, 0))
             insn.add(FieldInsnNode(Opcodes.GETSTATIC, fieldOwner, fieldName,fieldDescriptor))
-            insn.add(LdcInsnNode(multiplier));
-            insn.add(InsnNode(Opcodes.IMUL));
+            insn.add(LdcInsnNode(multiplier))
+            insn.add(InsnNode(Opcodes.IMUL))
             insn.add(InsnNode(Opcodes.IRETURN))
+            node.maxStack = 3
+            node.maxLocals = 2
+            classNode.methods.add(node)
+        }
+
+        fun addMethod2(classNode: ClassNode, name: String, type: String, fieldOwner: String, fieldName: String, fieldDescriptor: String) {
+            val node = MethodNode(ACC_PUBLIC, name, type, null, null)
+            val insn = node.instructions
+            insn.add(VarInsnNode(Opcodes.ALOAD, 0))
+            insn.add(FieldInsnNode(Opcodes.GETFIELD, fieldOwner, fieldName,fieldDescriptor))
+            insn.add(InsnNode(Opcodes.ARETURN))
             node.maxStack = 3
             node.maxLocals = 2
             classNode.methods.add(node)

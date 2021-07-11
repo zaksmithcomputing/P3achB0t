@@ -1,15 +1,13 @@
 package com.p3achb0t.client.configs
 
-import java.awt.Dimension
-
 class Constants {
     companion object {
         // URLs
         const val GAME_BASE_URL = "runescape.com"
-        const val GAME_SUB_RUTE = "oldschool"
-        const val GAME_WORLD = 83
-        const val GAME_WORLD_URL = "http://$GAME_SUB_RUTE" + GAME_WORLD + ".$GAME_BASE_URL"
-        const val GAME_WORLD_BASE = GAME_SUB_RUTE + GAME_WORLD + ".$GAME_BASE_URL"
+        const val GAME_SUB_ROUTE = "oldschool"
+        const val GAME_WORLD = 81
+        const val GAME_WORLD_BASE = "$GAME_SUB_ROUTE$GAME_WORLD.$GAME_BASE_URL"
+        const val GAME_WORLD_URL = "http://$GAME_WORLD_BASE"
 
         //Paths
         val USER_DIR = System.getProperty("user.dir")
@@ -22,12 +20,13 @@ class Constants {
         const val ACCOUNTS_DIR = "user"
         const val ACCOUNTS_FILE = "accounts.json"
 
-
         // Other constants
-        val REVISION = 188
-        var INJECTED_JAR_NAME = "gamepack-$REVISION-injected.jar"
+        val REVISION = 196
+        val REVISION_WITH_SUBVERSION = REVISION + .2 // Update this if we want to force a new injected jar
+        var INJECTED_JAR_NAME = "gamepack-$REVISION_WITH_SUBVERSION-injected.jar"
 
-        val GAMESIZE = Dimension(800,600)
+        const val MIN_GAME_WIDTH = 765
+        const val MIN_GAME_HEIGHT = 503
 
         //Icons
         const val RESOURCE_DIR = "resources"

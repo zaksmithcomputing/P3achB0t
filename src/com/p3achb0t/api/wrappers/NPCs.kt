@@ -3,15 +3,26 @@ package com.p3achb0t.api.wrappers
 import com.p3achb0t.api.Context
 import kotlin.math.abs
 import kotlin.math.max
-import kotlin.math.min
 
 class NPCs(val ctx: Context) {
+
+    fun getAllNPCs(sortByDist: Boolean = true): ArrayList<NPC>{
+        val npcList = ArrayList<NPC>()
+        try {
+            val npcs = findNpcs(sortByDist = sortByDist)
+            npcs.forEach {
+                npcList.add(it)
+            }
+        } catch (e: Exception) {
+        }
+        return npcList
+    }
     fun findNpc(npcName: String, sortByDist: Boolean = true): ArrayList<NPC> {
         val foundNPCs = ArrayList<NPC>()
         try {
             val npcs = findNpcs(sortByDist = sortByDist)
             npcs.forEach {
-                if (it.npc.getType().getName().contains(npcName)) {
+                if (it.name.contains(npcName)) {
                     foundNPCs.add(it)
                 }
             }
@@ -19,6 +30,7 @@ class NPCs(val ctx: Context) {
         }
         return foundNPCs
     }
+
 
     fun findNpc(npcId: Int): ArrayList<NPC> {
         val foundNPCs = ArrayList<NPC>()
@@ -50,12 +62,27 @@ class NPCs(val ctx: Context) {
     }
 
 
+    fun nearestAttackableNpc(npcNames: ArrayList<String>): ArrayList<NPC> {
+        val foundNPCs = ArrayList<NPC>()
+        try {
+            val npcs = findNpcs(sortByDist = true)
+            npcs.forEach {
+                if (npcNames.indexOf(it.name)!= -1 && (it.npc.getTargetIndex() - 32768 == (ctx.players.getLocal().player.getIndex()) || it.npc.getTargetIndex() == -1 && it.npc.getSequence() != 92)) {
+                    println("Found suitable npc")
+                    foundNPCs.add(it)
+                }
+            }
+        } catch (e: Exception) {
+        }
+        return foundNPCs
+    }
+
     fun nearestAttackableNpc(npcName: String): ArrayList<NPC> {
         val foundNPCs = ArrayList<NPC>()
         try {
             val npcs = findNpcs(sortByDist = true)
             npcs.forEach {
-                if (it.npc.getType().getName().contains(npcName) && it.npc.getTargetIndex() - 32768 == (ctx.players.getLocal().player.getIndex()) || it.npc.getTargetIndex() == -1 && it.npc.getSequence() != 92) {
+                if (it.name.contains(npcName) && (it.npc.getTargetIndex() - 32768 == (ctx.players.getLocal().player.getIndex()) || it.npc.getTargetIndex() == -1 && it.npc.getSequence() != 92)) {
                     println("Found suitable npc")
                     foundNPCs.add(it)
                 }
@@ -82,30 +109,43 @@ class NPCs(val ctx: Context) {
 
     // This function will return a list of NPCs with closes distance to you
     fun findNpcs(npcName: String, sortByDist: Boolean = false): ArrayList<NPC> {
-        val npcs = ArrayList<NPC>()
-        ctx.client.getNpcs().forEachIndexed { index, npc ->
-            if (npc != null && npc.getType().getName().contentEquals(npcName)) {
-                npcs.add(NPC(npc, ctx, index))
+        return ArrayList(getAllNPCs(sortByDist).filter { it.name.contentEquals(npcName) })
+    }
+
+    // This function will return a list of NPCs with closes distance to you
+    fun findNpcs(npcName: String, area: Area, sortByDist: Boolean = false): ArrayList<NPC> {
+        return ArrayList(getAllNPCs(sortByDist).filter { it.name.contentEquals(npcName) && area.contains(it) })
+    }
+
+    val randomEventNPCsNamesToIgnore = arrayListOf("Dr Jekyll", "Evil Bob", "Bee keeper", "Capt' Arnav", "Niles",
+    "Miles", "Giles", "Sergeant Damien", "Drunken Dwarf", "Freaky Forester", "Genie", "Leo", "Postie Pete", "Molly", "Mysterious Old Man",
+    "Pillory Guard", "Tilt", "Flippa", " Prison Pete", "Quiz Master", "Rick Turpentine", "Sandwich Lady", "Strange plant", "Dunce", "Mr.Mordaut")
+    val randomEventNPCsNamesToIgnoreLowercase = randomEventNPCsNamesToIgnore.map { it.toLowerCase() }
+
+
+    fun getTargetted(): NPC? {
+        val foundNPCs = ArrayList<NPC>()
+        val npcs = findNpcs(sortByDist = true)
+        npcs.forEach {
+            if (it.npc.getTargetIndex() - 32768 == (ctx.players.getLocal().player.getIndex()) && it.npc.getSequence() != 92
+                    && !randomEventNPCsNamesToIgnoreLowercase.contains(it.name.toLowerCase())) {
+                foundNPCs.add(it)
             }
         }
-        if (sortByDist) {
-            npcs.sortBy {
-                // Sort closest to player
-                val localPlayer = ctx.client.getLocalPlayer()
-                max(
-                        abs(localPlayer.getX() - it.npc.getX()),
-                        abs(localPlayer.getY() - it.npc.getY())
-                )
-            }
+        when (foundNPCs.isEmpty()) {
+            true -> return null
+            false -> return foundNPCs[0]
+
         }
-        return npcs
     }
 
     fun getTargetted(npcname: String): NPC? {
         val foundNPCs = ArrayList<NPC>()
         val npcs = findNpcs(npcname, sortByDist = true)
         npcs.forEach {
-            if (it.npc.getType().getName().contains(npcname) && it.npc.getTargetIndex() - 32768 == (ctx.players.getLocal().player.getIndex()) && it.npc.getSequence() != 92) {
+            if (it.name.contains(npcname)
+                    && !randomEventNPCsNamesToIgnoreLowercase.contains(it.name.toLowerCase())
+                    && it.npc.getTargetIndex() - 32768 == (ctx.players.getLocal().player.getIndex()) && it.npc.getSequence() != 92) {
                 foundNPCs.add(it)
             }
         }
@@ -128,20 +168,27 @@ class NPCs(val ctx: Context) {
             if (sortByDist) {
                 npcs.sortBy {
                     // Sort closest to player
-                    val localPlayer = ctx.client.getLocalPlayer()
-                    min(
-                            abs(localPlayer.getX() - it.npc.getX()),
-                            abs(localPlayer.getY() - it.npc.getY())
-                    )
+                    it.distanceTo()
                 }
             }
         } catch (e: Exception) {
+            e.printStackTrace()
         }
         return npcs
     }
 
-    fun getNearestNPC(npcname: String): NPC {
-        return findNpcs(npcname, true)[0]
+    fun getNearestNPC(npcname: String): NPC? {
+        val npcs = findNpcs(npcname, true)
+        return if(npcs.isNotEmpty()) {
+            npcs[0]
+        }
+        else{
+         null
+        }
+    }
+
+    fun getNearestNPC(npcname: String, area: Area): NPC {
+        return findNpcs(npcname,area, true)[0]
     }
 
     fun getNearestNPC() : NPC {
@@ -156,4 +203,6 @@ class NPCs(val ctx: Context) {
             npcs.first()
         }
     }
+
+
 }

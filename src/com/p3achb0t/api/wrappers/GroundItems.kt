@@ -1,8 +1,8 @@
 package com.p3achb0t.api.wrappers
 
-import com.p3achb0t._runestar_interfaces.Node
-import com.p3achb0t._runestar_interfaces.Obj
-import com.p3achb0t._runestar_interfaces.Tile
+import com.p3achb0t.api.interfaces.Node
+import com.p3achb0t.api.interfaces.Obj
+import com.p3achb0t.api.interfaces.Tile
 import com.p3achb0t.api.Context
 import com.p3achb0t.api.wrappers.utils.ObjectPositionInfo
 
@@ -120,6 +120,8 @@ class GroundItems(val ctx: Context) {
                 Tile(tile.x + 3, tile.y - 3, ctx = ctx), ctx = ctx
         )
 
+        println("Loot Tile: ${tile.getGlobalLocation()} ${tile.getLocalLocation()} ${tile.getRegionalLocation()}")
+
         groundItems.forEachIndexed { groundItemIndex, groundObjs ->
             groundObjs.forEachIndexed { planeIndex, groundObjPlanes ->
                 groundObjPlanes.forEachIndexed groundobjectplane@{ index, groundObjByPlane ->
@@ -135,7 +137,11 @@ class GroundItems(val ctx: Context) {
                             val stacksize = obj.getQuantity()
                             val x = tiles[groundItemIndex][planeIndex][index].getX() * 128 + 64
                             val y = tiles[groundItemIndex][planeIndex][index].getY() * 128 + 64
-                            val LootTile =  Tile(x, y, ctx = ctx)
+                            val xGlob = x / 128 + ctx.client.getBaseX()
+                            val yGlob  = y / 128 + ctx.client.getBaseY()
+                            val LootTile =  Tile(xGlob, yGlob, ctx = ctx)
+
+                            println("GroundItem: ${LootTile.getGlobalLocation()}, ${LootTile.getLocalLocation()} ${LootTile.getRegionalLocation()}")
                             var id = obj.getId()
                             itemid.forEach {
                                 if (it == id && lootArea.containsOrIntersects(LootTile)) {

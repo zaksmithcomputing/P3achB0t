@@ -1,10 +1,36 @@
 [
   {
-    "id" : "773fe442-80f0-4a42-bcc9-193c862e3b25",
-    "username" : "test9@gmail.com",
-    "password" : "",
-    "pin" : "",
-    "script": "TutorialIslandDoAction"
+    "uuid": "",
+    "sessionStartTime": -1,
+    "useBreaks": false,
+    "minimumSessionTime": 0,
+    "maximumSessionTime": 0,
+    "minimumBreakTime": 0,
+    "maximumBreakTime": 0,
+    "lastBreakTime": 0,
+    "useWindowTime": false,
+    "windowStartTime": 1080,
+    "windowEndTime": 360,
+    "sessionToken": "",
+    "actionScript": "",
+    "debugScripts": [
+      "Total Debug Paint"
+    ],
+    "serviceScripts": [
+      "Login Handler",
+      "XP Tracker"
+    ],
+    "proxy": "none",
+    "username": "",
+    "password": "",
+    "googleAuthKey": "",
+    "pin": "",
+    "banned": false,
+    "gameWorld": 80,
+    "gameFps": 15,
+    "startActionScriptAutomatically": true,
+    "isOnBreak": false,
+    "key": "",
+    "args": ""
   }
-
 ]

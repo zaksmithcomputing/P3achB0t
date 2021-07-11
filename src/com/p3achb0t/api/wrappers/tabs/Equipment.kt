@@ -1,7 +1,6 @@
 package com.p3achb0t.api.wrappers.tabs
 
 import com.p3achb0t.api.Context
-import com.p3achb0t.api.user_inputs.DoActionParams
 import com.p3achb0t.api.wrappers.utils.Utils
 import com.p3achb0t.api.wrappers.widgets.WidgetID
 import com.p3achb0t.api.wrappers.widgets.WidgetItem
@@ -15,27 +14,87 @@ class Equipment(val ctx: Context) {
     companion object {
         const val NODE_ID = 94
 
-        enum class Slot(val widgetID: Int, val cacheIndex: Int = -1) {
-            Head(WidgetID.Equipment.HELMET, 0),
-            Cape(WidgetID.Equipment.CAPE, 1),
-            Neck(WidgetID.Equipment.AMULET, 2),
-            Weapon(WidgetID.Equipment.WEAPON, 3),
-            Body(WidgetID.Equipment.BODY, 4),
-            Shield(WidgetID.Equipment.SHIELD, 5),
-            Legs(WidgetID.Equipment.LEGS, 7),
-            Gloves(WidgetID.Equipment.GLOVES, 9),
-            Boots(WidgetID.Equipment.BOOTS, 10),
-            Ring(WidgetID.Equipment.RING, 12),
-            Quiver(WidgetID.Equipment.AMMO, 13),
-            EquiptmentStats(17),
-            PriceChecker(19),
-            ItemsKeptOnDeath(21),
-            CallFollower(23),
+        enum class Slot(val widgetID: Int, val cacheIndex: Int = -1, val unequipMenuAction: Int = -1) {
+            Head(WidgetID.Equipment.HELMET, 0, 25362447),
+            Cape(WidgetID.Equipment.CAPE, 1, 25362448),
+            Neck(WidgetID.Equipment.AMULET, 2, 25362449),
+            Weapon(WidgetID.Equipment.WEAPON, 3, 25362450),
+            Body(WidgetID.Equipment.BODY, 4, 25362451),
+            Shield(WidgetID.Equipment.SHIELD, 5, 25362452),
+            Legs(WidgetID.Equipment.LEGS, 7, 25362453),
+            Gloves(WidgetID.Equipment.GLOVES, 9, 25362454),
+            Boots(WidgetID.Equipment.BOOTS, 10, 25362455),
+            Ring(WidgetID.Equipment.RING, 12, 25362456),
+            Quiver(WidgetID.Equipment.AMMO, 13, 25362457),
+            EquiptmentStats(1),
+            PriceChecker(3),
+            ItemsKeptOnDeath(5),
+            CallFollower(7),
         }
     }
 
     fun isOpen(): Boolean {
         return ctx.tabs.getOpenTab() == Tabs.Tab_Types.Equiptment
+    }
+
+    fun getEquippeditems(): ArrayList<Int> {
+        val itemids = ArrayList<Int>()
+        Slot.values().forEach {
+            if (isEquipmentSlotEquipted(it)) {
+//                println("Item equipped = " + getItemAtSlot(it)!!.id)
+                itemids.add(getItemAtSlot(it)!!.id)
+            }
+        }
+        return itemids
+    }
+
+    fun contains(id: Int): Boolean {
+        var Contains = false
+        Slot.values().forEach {
+            if (getItemAtSlot(it)?.id == id) {
+                Contains = true
+            }
+        }
+        return Contains
+    }
+
+    fun containsAny(ids: IntArray): Boolean {
+        var contains = false
+        Slot.values().forEach {
+//            println("Looking at slot: ${it.name} id: ${getItemAtSlot(it)?.id}")
+            if (isEquipmentSlotEquipted(it)) {
+                if(getItemAtSlot(it)?.id ?: -1 in ids) {
+                    contains = true
+                }
+            }
+        }
+
+        return contains
+    }
+    fun containsAny(id: ArrayList<Int>): Boolean {
+        var Contains = false
+        Slot.values().forEach {
+            for (i in id) {
+                if (isEquipmentSlotEquipted(it)) {
+                    if (getItemAtSlot(it)?.id == i) {
+                        Contains = true
+                    }
+                }
+            }
+        }
+
+        return Contains
+    }
+
+    fun containsAll(id: ArrayList<Int>): Boolean {
+        var Contains = true
+        id.forEach {
+            if (!contains(it)) {
+                println("Can't find " + it + " in inv")
+                Contains = false
+            }
+        }
+        return Contains
     }
 
     suspend fun open(waitForActionToComplete: Boolean = true) {
@@ -68,25 +127,11 @@ class Equipment(val ctx: Context) {
             })
     }
 
-    suspend fun unEquiptItem(slot: Slot, waitForActionToComplete: Boolean = true) {
-        val item = getItemAtSlot(slot)
-        println("Removing item from ${slot.name} ${item?.area}")
-        item?.interact("Remove" )
-        // Wait till item gets removed
-        if (waitForActionToComplete)
-            Utils.waitFor(2, object : Utils.Condition {
-                override suspend fun accept(): Boolean {
-                    delay(100)
-                    return !isEquipmentSlotEquipted(slot)
-                }
-            })
-    }
-
     suspend fun interactWithSlot(slot: Slot, interaction: String) {
-        if(!isOpen()){
+        if (!isOpen()) {
             open()
         }
-        if(isOpen()) {
+        if (isOpen()) {
             val item = getItemAtSlot(slot)
             println("Interacting with item ${slot.name} ${item?.area}" + " " + interaction)
             item?.interact(interaction)
@@ -95,22 +140,8 @@ class Equipment(val ctx: Context) {
         }
     }
 
-    suspend fun duelingcastlewars() {
-        val doActionParams = DoActionParams(-1, 25362455, 57, 3, "", "", 0, 0)
-        ctx?.mouse?.overrideDoActionParams = true
-        ctx?.mouse?.doAction(doActionParams)
-        delay(600)
-    }
 
-    suspend fun duelingclawnwars() {
-        val doActionParams = DoActionParams(-1, 25362455, 57, 4, "", "", 0, 0)
-        ctx?.mouse?.overrideDoActionParams = true
-        ctx?.mouse?.doAction(doActionParams)
-        delay(600)
-    }
-
-
-    fun isEquipmentSlotEquipted(slot: Slot): Boolean {
+    fun isEquipmentSlotEquipted(slot: Equipment.Companion.Slot): Boolean {
         try {
             val item = ctx.items.getItemInfo(
                     NODE_ID,
@@ -125,7 +156,6 @@ class Equipment(val ctx: Context) {
     }
 
 
-
     fun getItemAtSlot(slot: Slot): WidgetItem? {
         return try {
             val widget = ctx.widgets.find(WidgetID.EQUIPMENT_GROUP_ID, slot.widgetID)
@@ -138,4 +168,17 @@ class Equipment(val ctx: Context) {
             null
         }
     }
+
+    fun containsAll(id: IntArray): Boolean {
+        var Contains = true
+        id.forEach {
+            if (!contains(it)) {
+                println("Can't find " + it + " in inv")
+                Contains = false
+            }
+        }
+        return Contains
+    }
+
+
 }

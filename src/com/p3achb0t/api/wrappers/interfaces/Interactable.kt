@@ -1,15 +1,17 @@
 package com.p3achb0t.api.wrappers.interfaces
 
 import com.p3achb0t.api.Context
-import com.p3achb0t.api.user_inputs.Mouse
+import com.p3achb0t.api.userinputs.Mouse
+import com.p3achb0t.api.utils.Logging
 import com.p3achb0t.api.wrappers.*
+import com.p3achb0t.api.wrappers.utils.Utils
+import kotlinx.coroutines.delay
 import java.awt.Point
 import java.awt.Polygon
 import kotlin.math.abs
 import kotlin.math.roundToInt
-import kotlin.random.Random
 
-abstract class Interactable(var ctx: Context?) {
+abstract class Interactable(var ctx: Context?): Logging()  {
     abstract fun getInteractPoint(): Point
     abstract fun isMouseOverObj(): Boolean
 
@@ -170,6 +172,24 @@ abstract class Interactable(var ctx: Context?) {
             ctx?.mouse?.moveMouse(getInteractPoint(), click = true) ?: false
         }
     }
+
+    suspend fun clickUntil(condition: suspend () -> Boolean,time: Int = 5, delayTimeMS: Long = 10){
+        val point = getInteractPoint()
+        if ((point.x == -1 && point.y == -1) || (point.x == 0 && point.y == 0)) {
+            logger.error("Couldnt find interaction point")
+        } else {
+
+            for (i in 1..time * 100) {
+                if (condition()) {
+                    break
+                }
+                ctx?.mouse?.moveMouse(point, click = true)
+                delay(delayTimeMS)
+            }
+
+        }
+    }
+
 
     suspend fun clickGroundObject(groundItem: GroundItem): Boolean {
         val point = getInteractPoint()

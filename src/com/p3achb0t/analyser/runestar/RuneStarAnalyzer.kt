@@ -1,51 +1,34 @@
 package com.p3achb0t.analyser.runestar
 
 import com.google.gson.Gson
-import com.p3achb0t.injection.class_generation.isBaseType
-import com.p3achb0t.injection.class_generation.isFieldNameUnique
+import com.p3achb0t.Main
+import com.p3achb0t.analyser.class_generation.createRunestarInterfaces
+import com.p3achb0t.analyser.class_generation.isBaseType
+import com.p3achb0t.analyser.class_generation.isFieldNameUnique
 import org.objectweb.asm.ClassReader
 import org.objectweb.asm.tree.ClassNode
 import java.io.File
+import java.lang.System.exit
 import java.util.jar.JarFile
 
 class RuneStarAnalyzer {
-    val analyzers = mutableMapOf<String, ClassHook>()
-    val classRefObs = mutableMapOf<String, ClassHook>()
+    val analyzers = mutableMapOf<String, ClassHook>()   // key is the obfuscated class name
+    val classRefObs = mutableMapOf<String, ClassHook>() // Key is the identified class name
     fun loadHooks(): String {
         val hookDir = "/hooks/"
         val path = System.getProperty("user.dir")
-        val hookFileName = "hooks_188.json"
-        val file = File("./$hookDir/$hookFileName")
+        val hookFileName = "hooks.json"
+        var json = ""
 
-        val json = file.readText() // your json value here
-        val topic = Gson().fromJson(json, Array<ClassHook>::class.java)
-        //RuneStar has the Y and Z flipped from how our client works. Need to update the field name
-        val yTemp = topic.filter { it.`class` == "Client" }[0].fields.filter { it.field =="cameraY" }[0].copy()
-        val zTemp = topic.filter { it.`class` == "Client" }[0].fields.filter { it.field =="cameraZ" }[0].copy()
-
-        //Update by swapping names of the field
-        topic.iterator().forEach {
-            if(it.`class` == "Client"){
-                it.fields.iterator().forEach { fieldHook ->
-                    if(fieldHook.field == "cameraY"){
-                        println("Updating CameraY from ${fieldHook.name}->$zTemp")
-                        fieldHook.name = zTemp.name
-                        fieldHook.owner = zTemp.owner
-                        fieldHook.decoder = zTemp.decoder
-
-                    }
-                    if(fieldHook.field == "cameraZ"){
-                        println("Updating CameraZ from ${fieldHook.name}->${yTemp}")
-                        fieldHook.name = yTemp.name
-                        fieldHook.owner = yTemp.owner
-                        fieldHook.decoder = yTemp.decoder
-                    }
-                }
-            }
+        //Depending on if we are running within IntelliJ or from Jar the hooks file might be in a different location
+        json = if( File("./$hookDir/$hookFileName").exists()) {
+            File("./$hookDir/$hookFileName").readText()
+        }else{
+            Main.javaClass.getResourceAsStream("/$hookFileName").bufferedReader().readLines().forEach { json+= it + "\n" }
+            json
         }
-
-        println("cameraZ = ${topic.filter { it.`class` == "Client" }[0].fields.filter { it.field =="cameraZ" }[0]}")
-        println("cameraY = ${topic.filter { it.`class` == "Client" }[0].fields.filter { it.field =="cameraY" }[0]}")
+//        val json = file.readText() // your json value here
+        val topic = Gson().fromJson(json, Array<ClassHook>::class.java)
 
         for (clazz in topic) {
 
@@ -53,9 +36,35 @@ class RuneStarAnalyzer {
             classRefObs[clazz.name] = clazz
         }
 
-        val folder = "./src/com/p3achb0t/_runestar_interfaces2/"
-        val _package = "com.p3achb0t._runestar_interfaces"
+        val folder = "./src/com/p3achb0t/api/interfaces2/"
+        val _package = "com.p3achb0t.api.interfaces"
+
+        //get client debug text
+        for(clazz in analyzers){
+            if(clazz.value.`class` == "Client"){
+                for (field in clazz.value.fields) {
+                    var updatedDescriptor = field.descriptor
+                    if (isBaseType(updatedDescriptor)) {
+                        //Check to ensure that there are no fields with the same name in the super class
+                        //Filter all methods that dont have a renamed function
+                        //&& "get__+${field.owner}_${field.name}" == field.getterMethod
+                        "debugText.add(DebugText(\"hasFocus? x: \${ctx.client.getHasFocus()}\"))"
+
+                        if(updatedDescriptor == "I" && field.getterMethod.contains("get__")){
+                            println("debugText.add(DebugText(\"${field.getterMethod.padEnd(15)}: \${ctx.client.${field.getterMethod}()}\"))")
+                        }
+
+                        //println("Strings")
+//                        if(updatedDescriptor.contains("String") && field.getterMethod.contains("get__")){
+//                            println("debugText.add(DebugText(\"${field.getterMethod.padEnd(15)}: \${ctx.client.${field.getterMethod}()}\"))")
+//                        }
+                    }
+                }
+            }
+        }
+
 //            createRunestarInterfaces(folder, _package, analyzers, classRefObs)
+//        exit(0)
         return "./$hookDir/$hookFileName"
     }
 

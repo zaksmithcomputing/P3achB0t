@@ -1,22 +1,27 @@
 package com.p3achb0t.api
 
-import com.p3achb0t._runestar_interfaces.Client
-import com.p3achb0t._runestar_interfaces.Component
-import com.p3achb0t.api.user_inputs.Camera
-import com.p3achb0t.api.user_inputs.Keyboard
-import com.p3achb0t.api.user_inputs.Mouse
+import com.p3achb0t.api.interfaces.Client
+import com.p3achb0t.api.interfaces.Component
+import com.p3achb0t.api.script.communication.Channels
+import com.p3achb0t.api.script.communication.Coms
+import com.p3achb0t.api.userinputs.Camera
+import com.p3achb0t.api.userinputs.Keyboard
+import com.p3achb0t.api.userinputs.Mouse
 import com.p3achb0t.api.wrappers.*
+import com.p3achb0t.api.wrappers.cache.RSCache
+import com.p3achb0t.api.wrappers.platforminfo.PlatformInfo
 import com.p3achb0t.api.wrappers.quests.QuestData
 import com.p3achb0t.api.wrappers.tabs.*
+import com.p3achb0t.api.wrappers.walking.BankLocations
+import com.p3achb0t.api.wrappers.walking.WalkingPathFinding
 import com.p3achb0t.api.wrappers.widgets.Widgets
+
 import java.applet.Applet
 
 class Context(val obj: Any) {
 
-
     val applet: Applet
     var selectedWidget: Component? = null
-
     val client: Client = obj as Client
     val players: Players
     val groundItems: GroundItems
@@ -38,12 +43,21 @@ class Context(val obj: Any) {
     val tabs: Tabs
     val widgets: Widgets
     val vars: Vars
-    val cache: Cache
+    val cache: RSCache
     val run: Run
     val stats: Stats
     val questData: QuestData
     val projectiles: Projectiles
     val worldHop: WorldHop
+    val grandExchange: GrandExchange
+    val trade: Trade
+    val ipc: Channels
+    val coms: Coms
+    val combat: Combat
+    var shops: Shops
+    var platformInfo: PlatformInfo
+//    var bankLocations: BankLocations
+    var walking: WalkingPathFinding
 
     init {
         mouse = Mouse(obj)
@@ -67,12 +81,21 @@ class Context(val obj: Any) {
         tabs = Tabs(this)
         widgets = Widgets(this)
         vars = Vars(this)
-        cache = Cache()
+        cache = RSCache()
         run = Run(this)
         stats = Stats(this)
         questData = QuestData(this)
         projectiles = Projectiles(this)
         worldHop = WorldHop(this)
+        grandExchange = GrandExchange(this)
+        trade = Trade(this)
+        ipc = Channels()
+        coms = Coms
+        combat = Combat(this)
+        shops = Shops(this)
+        platformInfo = PlatformInfo(this)
+        walking = WalkingPathFinding(this)
+//        bankLocations = BankLocations(this)
     }
 }
 
